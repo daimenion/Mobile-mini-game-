@@ -43,7 +43,15 @@ public class Game extends View {
     private boolean[] cloudsActive = new boolean[10];
     private int[] cloudsX = new int[10];
     private int[] cloudsY = new int[10];
+<<<<<<< HEAD
     private int[] cloudImageArray = {R.drawable.cloud1, R.drawable.cloud2, R.drawable.cloud3};
+=======
+    private int[] cloudImageArray = {R.drawable.cloud1,R.drawable.cloud2,R.drawable.cloud3};
+
+    private ArrayList<Platforms> allPlatforms = new ArrayList<Platforms>();
+    private int[] platformImageArray = {R.drawable.platform0,R.drawable.platform1,R.drawable.platform2,R.drawable.platform3,R.drawable.platform4};
+    private int platformGen = 100;
+>>>>>>> 2154fe6787b621754cc7645b55dce69f6f54e181
 
     private volatile boolean playing;
     private boolean isMoving;
@@ -54,8 +62,12 @@ public class Game extends View {
     private long fps;
     private long timeThisFrame;
     private long lastFrameChangeTime = 0;
+<<<<<<< HEAD
     private int frameLeng = 75;
     private  float gravity = 0.1f;
+=======
+    private int frameLengthInMillisecond = 75;
+>>>>>>> 2154fe6787b621754cc7645b55dce69f6f54e181
 
     private Rect frameToDraw = new Rect(0, 0, frameWidth, frameHeight);
 
@@ -75,25 +87,42 @@ public class Game extends View {
         super(context);
         m_startTime = System.nanoTime();
         playerBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.running_man);
+<<<<<<< HEAD
         playerJump = BitmapFactory.decodeResource(getResources(), R.drawable.jumping);
         background = BitmapFactory.decodeResource(getResources(), R.drawable.background);
         playerBitmap = Bitmap.createScaledBitmap(playerBitmap, frameWidth * frameCount, frameHeight, false);
 
 
+=======
+        background = BitmapFactory.decodeResource(getResources(), R.drawable.background2);
+        playerBitmap = Bitmap.createScaledBitmap(playerBitmap, frameWidth * frameCount, frameHeight, false);
+
+
+        Random r = new Random();
+
+>>>>>>> 2154fe6787b621754cc7645b55dce69f6f54e181
         playerW = playerBitmap.getWidth();
         playerH = playerBitmap.getHeight();
         int previousRan = 0;
         int ranNum = 0;
+<<<<<<< HEAD
         for (int i = 0; i < currentClouds.length; i++) {
             Random r = new Random();
+=======
+        for(int i = 0; i < currentClouds.length ; i++)
+        {
+>>>>>>> 2154fe6787b621754cc7645b55dce69f6f54e181
             while (ranNum == previousRan) {
-                System.out.println("wtf");
                 ranNum = r.nextInt(cloudImageArray.length);
             }
             previousRan = ranNum;
             currentClouds[i] = BitmapFactory.decodeResource(getResources(), cloudImageArray[ranNum]);
             cloudsX[i] = 1800;
+<<<<<<< HEAD
             cloudsY[i] = r.nextInt(200 - 10) + 10;
+=======
+            cloudsY[i] = r.nextInt(400-10)+10;
+>>>>>>> 2154fe6787b621754cc7645b55dce69f6f54e181
             cloudsActive[i] = false;
 
         }
@@ -104,6 +133,9 @@ public class Game extends View {
         m_paint.setColor(Color.RED);
         m_paint.setTextSize(60);
 
+        allPlatforms.add(new Platforms(BitmapFactory.decodeResource(getResources(),platformImageArray[0]),0,841));
+        allPlatforms.add(new Platforms(BitmapFactory.decodeResource(getResources(),platformImageArray[0]),800,841));
+        allPlatforms.add(new Platforms(BitmapFactory.decodeResource(getResources(),platformImageArray[0]),1600,841));
     }
 
     public void currentFrame() {
@@ -151,6 +183,7 @@ public class Game extends View {
 
         // Set a random X and Y coordinate for the bug
         m_endTime = System.nanoTime();
+<<<<<<< HEAD
         m_diff = (m_endTime - m_startTime) / 1e6;
 
 
@@ -160,11 +193,33 @@ public class Game extends View {
             if (cloudGen == 0) {
                 Random r = new Random();
                 cloudGen = r.nextInt(250 - 150) + 150;
+=======
+        m_diff = (m_endTime - m_startTime)/1e6;
+
+        if (m_diff > 10)
+        {
+            cloudGen -- ;
+            platformGen--;
+
+            Random r = new Random();
+            if (cloudGen == 0)
+            {
+                cloudGen = r.nextInt(250-150)+150;
+>>>>>>> 2154fe6787b621754cc7645b55dce69f6f54e181
                 cloudsActive[cloudIndex] = true;
                 if (cloudIndex == 9)
                     cloudIndex = 0;
                 else
                     cloudIndex++;
+            }
+
+            if (platformGen == 0)
+            {
+                System.out.println("GEN");
+                int platformNum = r.nextInt(platformImageArray.length-1)+1;
+                platformGen =  ((r.nextInt(250-200)+200)/platformNum);
+                System.out.println("sdmfksdakflnsdlkfnlksdnflknsdf s--------" + m_screenH);
+                allPlatforms.add(new Platforms(BitmapFactory.decodeResource(getResources(),platformImageArray[platformNum]),2200,r.nextInt((m_screenH-50)-300)+300));
             }
         }
         while (playing) {
@@ -186,11 +241,43 @@ public class Game extends View {
                 }
             }
 
+<<<<<<< HEAD
         for (int i = 0; i < currentClouds.length; i++) {
             canvas.drawBitmap(currentClouds[i], cloudsX[i], cloudsY[i], null);
+=======
+            //Platform Draw Update
+            if (!allPlatforms.isEmpty())
+            {
+                for (int i = 0 ; i < allPlatforms.size(); i++)
+                {
+                    if (allPlatforms.get(i).getX() < (allPlatforms.get(i).getWidth() * -1)) {
+                        System.out.println(allPlatforms.get(i).getX() + " REMOVED");
+                        allPlatforms.remove(i);
+                        i--;
+                    }
+                    else
+                    {
+                        allPlatforms.get(i).move();
+                      //  System.out.println(allPlatforms.get(i).getX());
+                       // System.out.println(allPlatforms.get(i).getY());
+                       // System.out.println("------------");
+                        canvas.drawBitmap(allPlatforms.get(i).getSprite(), allPlatforms.get(i).getX(), allPlatforms.get(i).getY(), null);
+                    }
+                }
+            }
+
+        for(int i = 0 ; i < currentClouds.length ; i++)
+        {
+            canvas.drawBitmap(currentClouds[i],cloudsX[i],cloudsY[i],null);
+>>>>>>> 2154fe6787b621754cc7645b55dce69f6f54e181
         }
         m_startTime = m_endTime;
 
+
+        // Drawing the Player
+        whereToDraw.set((int) playerX, (int) playerY, (int) playerX + frameWidth, (int) playerY + frameHeight);
+        manageCurrentFrame();
+        canvas.drawBitmap(playerBitmap, frameToDraw, whereToDraw, null);
 
         // Draw Score
         canvas.drawText("Score: " + m_score, 50, 100, m_paint);
