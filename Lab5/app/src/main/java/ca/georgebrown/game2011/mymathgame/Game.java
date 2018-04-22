@@ -14,6 +14,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -31,7 +32,7 @@ public class Game extends View {
 
     private int m_scoreH;
     private int m_score;
-    private Bitmap playerBitmap, background;
+    private Bitmap playerBitmap, background, playerJump;
     private Paint m_paint;
     private long m_startTime, m_endTime;
     private double m_diff;
@@ -42,58 +43,57 @@ public class Game extends View {
     private boolean[] cloudsActive = new boolean[10];
     private int[] cloudsX = new int[10];
     private int[] cloudsY = new int[10];
-    private int[] cloudImageArray = {R.drawable.cloud1,R.drawable.cloud2,R.drawable.cloud3};
-
-
+    private int[] cloudImageArray = {R.drawable.cloud1, R.drawable.cloud2, R.drawable.cloud3};
 
     private volatile boolean playing;
     private boolean isMoving;
-    private float manXPos = 10, manYPos = 10;
+    private boolean isJumping;
     private int frameWidth = 230, frameHeight = 274;
     private int frameCount = 8;
     private int currentFrame = 0;
     private long fps;
     private long timeThisFrame;
     private long lastFrameChangeTime = 0;
-    private int frameLengthInMillisecond = 50;
+    private int frameLeng = 75;
+    private  float gravity = 0.1f;
 
     private Rect frameToDraw = new Rect(0, 0, frameWidth, frameHeight);
 
     private RectF whereToDraw = new RectF(playerX, playerY, playerX + frameWidth, frameHeight);
-
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         m_screenW = w;
         m_screenH = h;
 
-        background = Bitmap.createScaledBitmap(background,w,h,true);
+        background = Bitmap.createScaledBitmap(background, w, h, true);
         playerX = (int) (50);
-        playerY = (int) (m_screenH*0.85) - (playerH);
+        playerY = (int) (m_screenH * 0.85) - (playerH);
     }
 
     public Game(Context context) {
         super(context);
         m_startTime = System.nanoTime();
         playerBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.running_man);
+        playerJump = BitmapFactory.decodeResource(getResources(), R.drawable.jumping);
         background = BitmapFactory.decodeResource(getResources(), R.drawable.background);
         playerBitmap = Bitmap.createScaledBitmap(playerBitmap, frameWidth * frameCount, frameHeight, false);
+
 
         playerW = playerBitmap.getWidth();
         playerH = playerBitmap.getHeight();
         int previousRan = 0;
         int ranNum = 0;
-        for(int i = 0; i < currentClouds.length ; i++)
-        {
+        for (int i = 0; i < currentClouds.length; i++) {
             Random r = new Random();
             while (ranNum == previousRan) {
                 System.out.println("wtf");
                 ranNum = r.nextInt(cloudImageArray.length);
             }
             previousRan = ranNum;
-            currentClouds[i] = BitmapFactory.decodeResource(getResources(),cloudImageArray[ranNum]);
+            currentClouds[i] = BitmapFactory.decodeResource(getResources(), cloudImageArray[ranNum]);
             cloudsX[i] = 1800;
-            cloudsY[i] = r.nextInt(200-10)+10;
+            cloudsY[i] = r.nextInt(200 - 10) + 10;
             cloudsActive[i] = false;
 
         }
@@ -106,33 +106,60 @@ public class Game extends View {
 
     }
 
+    public void currentFrame() {
+        long time = System.currentTimeMillis();
+
+        if (isMoving) {
+            if (time > lastFrameChangeTime + frameLeng) {
+                lastFrameChangeTime = time;
+                currentFrame++;
+
+                if (currentFrame >= frameCount) {
+                    currentFrame = 0;
+                }
+            }
+        }
+        if (isJumping) {
+            playerBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.jumping);
+            frameWidth = 230;
+            frameToDraw.left = currentFrame * frameWidth;
+            frameToDraw.right = frameToDraw.left + frameWidth;
+            if (time > lastFrameChangeTime + frameLeng) {
+                lastFrameChangeTime = time;
+                currentFrame++;
+
+                if (currentFrame >= frameCount) {
+                    currentFrame = 0;
+
+                }
+
+            }
+        }
+
+        frameToDraw.left = currentFrame * frameWidth;
+        frameToDraw.right = frameToDraw.left + frameWidth;
+    }
+
     @Override
-    protected void onDraw(Canvas canvas){
+    protected void onDraw(Canvas canvas) {
         isMoving = !isMoving;
         super.onDraw(canvas);
 
         // Drawing the Background Image
-        canvas.drawBitmap(background,0,0,null);
+        canvas.drawBitmap(background, 0, 0, null);
 
 
         // Set a random X and Y coordinate for the bug
         m_endTime = System.nanoTime();
-        m_diff = (m_endTime - m_startTime)/1e6;
-
-        // Drawing the Player
-            whereToDraw.set((int) playerX, (int) playerY, (int) playerX + frameWidth, (int) playerY + frameHeight);
-            manageCurrentFrame();
-            canvas.drawBitmap(playerBitmap, frameToDraw, whereToDraw, null);
+        m_diff = (m_endTime - m_startTime) / 1e6;
 
 
-        if (m_diff > 10)
-        {
-            cloudGen -- ;
+        if (m_diff > 10) {
+            cloudGen--;
             System.out.println(cloudGen);
-            if (cloudGen == 0)
-            {
+            if (cloudGen == 0) {
                 Random r = new Random();
-                cloudGen = r.nextInt(250-150)+150;
+                cloudGen = r.nextInt(250 - 150) + 150;
                 cloudsActive[cloudIndex] = true;
                 if (cloudIndex == 9)
                     cloudIndex = 0;
@@ -142,7 +169,6 @@ public class Game extends View {
         }
         while (playing) {
             long startFrameTime = System.currentTimeMillis();
-            update();
 
             timeThisFrame = System.currentTimeMillis() - startFrameTime;
 
@@ -151,18 +177,17 @@ public class Game extends View {
             }
         }
 
-        for (int i = 0; i < currentClouds.length;i++)
+        for (int i = 0; i < currentClouds.length; i++)
             if (cloudsActive[i] == true) {
-                cloudsX[i]-=3;
+                cloudsX[i] -= 3;
                 if (cloudsX[i] < -300) {
                     cloudsX[i] = 1800;
                     cloudsActive[i] = false;
                 }
             }
 
-        for(int i = 0 ; i < currentClouds.length ; i++)
-        {
-            canvas.drawBitmap(currentClouds[i],cloudsX[i],cloudsY[i],null);
+        for (int i = 0; i < currentClouds.length; i++) {
+            canvas.drawBitmap(currentClouds[i], cloudsX[i], cloudsY[i], null);
         }
         m_startTime = m_endTime;
 
@@ -170,6 +195,10 @@ public class Game extends View {
         // Draw Score
         canvas.drawText("Score: " + m_score, 50, 100, m_paint);
 
+        // Drawing the Player
+        whereToDraw.set((int) playerX, (int) playerY, (int) playerX + frameWidth, (int) playerY + frameHeight);
+        currentFrame();
+        canvas.drawBitmap(playerBitmap, frameToDraw, whereToDraw, null);
 
 
         invalidate();
@@ -181,43 +210,21 @@ public class Game extends View {
         float touchX = event.getX();
         float touchY = event.getY();
 
-        System.out.println(touchX + "(" + playerX + " " + (playerX + playerW)+")" +
-                           touchY + "(" + playerY + " " + (playerY + playerH)+")" );
+        System.out.println(touchX + "(" + playerX + " " + (playerX + playerW) + ")" +
+                touchY + "(" + playerY + " " + (playerY + playerH) + ")");
 
-        if ((touchX >= playerX && touchX <= playerX + playerW) && (touchY >= playerY - playerH /2 && touchY <= playerY + playerH))
-        {
+        if ((touchX >= playerX && touchX <= playerX + playerW) && (touchY >= playerY - playerH / 2 && touchY <= playerY + playerH)) {
             m_score++;
+            isJumping = true;
 
         }
 
 
-        return super.onTouchEvent(event);
-    }
 
-        public void update() {
-            if (isMoving) {
-
-            }
-
+            return super.onTouchEvent(event);
         }
 
-        public void manageCurrentFrame() {
-            long time = System.currentTimeMillis();
 
-            if (isMoving) {
-                if (time > lastFrameChangeTime + frameLengthInMillisecond) {
-                    lastFrameChangeTime = time;
-                    currentFrame++;
-
-                    if (currentFrame >= frameCount) {
-                        currentFrame = 0;
-                    }
-                }
-            }
-
-            frameToDraw.left = currentFrame * frameWidth;
-            frameToDraw.right = frameToDraw.left + frameWidth;
-        }
 
     }
 
