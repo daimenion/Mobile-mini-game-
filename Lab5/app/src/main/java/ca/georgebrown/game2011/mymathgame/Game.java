@@ -6,7 +6,12 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.util.Log;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 
 import java.util.Random;
@@ -39,6 +44,23 @@ public class Game extends View {
     private int[] cloudsY = new int[10];
     private int[] cloudImageArray = {R.drawable.cloud1,R.drawable.cloud2,R.drawable.cloud3};
 
+
+
+    private volatile boolean playing;
+    private boolean isMoving;
+    private float manXPos = 10, manYPos = 10;
+    private int frameWidth = 230, frameHeight = 274;
+    private int frameCount = 8;
+    private int currentFrame = 0;
+    private long fps;
+    private long timeThisFrame;
+    private long lastFrameChangeTime = 0;
+    private int frameLengthInMillisecond = 50;
+
+    private Rect frameToDraw = new Rect(0, 0, frameWidth, frameHeight);
+
+    private RectF whereToDraw = new RectF(playerX, playerY, playerX + frameWidth, frameHeight);
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -47,14 +69,15 @@ public class Game extends View {
 
         background = Bitmap.createScaledBitmap(background,w,h,true);
         playerX = (int) (50);
-        playerY = (int) (m_screenH*0.9) - (playerH);
+        playerY = (int) (m_screenH*0.85) - (playerH);
     }
 
     public Game(Context context) {
         super(context);
         m_startTime = System.nanoTime();
-        playerBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bug);
+        playerBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.running_man);
         background = BitmapFactory.decodeResource(getResources(), R.drawable.background);
+        playerBitmap = Bitmap.createScaledBitmap(playerBitmap, frameWidth * frameCount, frameHeight, false);
 
         playerW = playerBitmap.getWidth();
         playerH = playerBitmap.getHeight();
@@ -85,6 +108,7 @@ public class Game extends View {
 
     @Override
     protected void onDraw(Canvas canvas){
+        isMoving = !isMoving;
         super.onDraw(canvas);
 
         // Drawing the Background Image
@@ -94,6 +118,11 @@ public class Game extends View {
         // Set a random X and Y coordinate for the bug
         m_endTime = System.nanoTime();
         m_diff = (m_endTime - m_startTime)/1e6;
+
+        // Drawing the Player
+            whereToDraw.set((int) playerX, (int) playerY, (int) playerX + frameWidth, (int) playerY + frameHeight);
+            manageCurrentFrame();
+            canvas.drawBitmap(playerBitmap, frameToDraw, whereToDraw, null);
 
 
         if (m_diff > 10)
@@ -109,6 +138,16 @@ public class Game extends View {
                     cloudIndex = 0;
                 else
                     cloudIndex++;
+            }
+        }
+        while (playing) {
+            long startFrameTime = System.currentTimeMillis();
+            update();
+
+            timeThisFrame = System.currentTimeMillis() - startFrameTime;
+
+            if (timeThisFrame >= 1) {
+                fps = 1000 / timeThisFrame;
             }
         }
 
@@ -131,10 +170,10 @@ public class Game extends View {
         // Draw Score
         canvas.drawText("Score: " + m_score, 50, 100, m_paint);
 
-        // Drawing the Player
-        canvas.drawBitmap(playerBitmap, playerX, playerY,null);
+
 
         invalidate();
+
     }
 
     @Override
@@ -154,4 +193,33 @@ public class Game extends View {
 
         return super.onTouchEvent(event);
     }
-}
+
+        public void update() {
+            if (isMoving) {
+
+            }
+
+        }
+
+        public void manageCurrentFrame() {
+            long time = System.currentTimeMillis();
+
+            if (isMoving) {
+                if (time > lastFrameChangeTime + frameLengthInMillisecond) {
+                    lastFrameChangeTime = time;
+                    currentFrame++;
+
+                    if (currentFrame >= frameCount) {
+                        currentFrame = 0;
+                    }
+                }
+            }
+
+            frameToDraw.left = currentFrame * frameWidth;
+            frameToDraw.right = frameToDraw.left + frameWidth;
+        }
+
+    }
+
+
+
